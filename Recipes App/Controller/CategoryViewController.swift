@@ -7,11 +7,13 @@
 //
 
 import UIKit
+import CoreData
 
 class CategoryViewController: UITableViewController {
     
     var categories = [Category]()
     let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Categories.plist")
+    let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
     
     
     override func viewDidLoad() {
@@ -33,10 +35,10 @@ class CategoryViewController: UITableViewController {
         }
         
         let action = UIAlertAction(title: "Add", style: .default) { (action) in
-            let newCategory = Category(name: textField.text!)
+            let newCategory = Category(context: self.context)
+            newCategory.name = textField.text
             self.categories.append(newCategory)
             self.saveData()
-            
         }
         
         alert.addAction(action)
@@ -57,37 +59,40 @@ class CategoryViewController: UITableViewController {
         return cell
     }
     
+    //MARK: - Table view delegate methods
+    
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        performSegue(withIdentifier: K.recipesSegue, sender: self)
+    }
+    
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        let destinaitonVC = segue.destination as! RecipeViewController
+        if let indexPath = tableView.indexPathForSelectedRow {
+            destinaitonVC.selectedCategory = categories[indexPath.row]
+        }
+    }
+    
+    
     //MARK: - Data Management Methods
     
-    func saveData() {
-        let encoder = PropertyListEncoder()
-        
+    func saveData() { // CREATE
         do {
-            let data = try encoder.encode(categories)
-            try data.write(to: dataFilePath!)
+            try context.save()
         } catch {
-            print("Error saving data to file, \(error)")
+            print("Error saving data, \(error)")
         }
         
-        self.tableView.reloadData()
+        tableView.reloadData()
     }
     
     func loadData() {
-        
-        
-        if let data = try? Data(contentsOf: dataFilePath!) {
-            let decoder = PropertyListDecoder()
-            do {
-                categories = try decoder.decode([Category].self, from: data)
-            } catch {
-                print("Error trying to fetch data from file, \(error)")
-            }
-            
-            
-            self.tableView.reloadData()
+        let request : NSFetchRequest<Category> = Category.fetchRequest()
+        do {
+            categories = try context.fetch(request)
+        } catch {
+            print("Error loading data, \(error)")
         }
         
-        
-        
+        tableView.reloadData()
     }
 }

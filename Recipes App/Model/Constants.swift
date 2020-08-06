@@ -14,4 +14,5 @@ struct K {
     static let recipeCellIdentifier = "RecipeCell"
     static let recipesSegue = "goToRecipes"
     static let singleRecipeSegue = "goToSingleRecipe"
+    static let addRecipeSegue = "goToAddRecipe"
 }
